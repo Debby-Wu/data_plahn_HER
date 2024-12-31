@@ -137,7 +137,8 @@ def train_test_dataset(inputData):
     x = x.to(torch.float32)
     y = torch.tensor(np.array(y).reshape(-1,1), dtype = torch.float32 )
     # dataSet = MyDataset(x[:,:,:1], x[:,:,1:51], x[:,:,51:101], y)
-    dataSet = MyDataset(x[:,:,:1], x[:,:,1:53], x[:,:,53:105], y)
+    # dataSet = MyDataset(x[:,:,:1], x[:,:,1:53], x[:,:,53:105], y)
+    dataSet = MyDataset(x[:,:,:1], x[:,:,1:97], x[:,:,97:193], y)
     
     return dataSet
 
@@ -149,8 +150,8 @@ class GRU_D(nn.Module):
         super(GRU_D, self).__init__()
         self.feature_size = feature_size
         self.hidden_size = hidden_size
-        self.c1 = torch.tensor(1, dtype=torch.float32)
-        self.ce = torch.tensor(2.7813, dtype=torch.float32)
+        self.c1 = torch.tensor(1, dtype=torch.float32).to(device)
+        self.ce = torch.tensor(2.7813, dtype=torch.float32).to(device)
         
         self.ct = nn.Linear(feature_size, feature_size)
         self.xa = nn.Linear(feature_size * 2, feature_size)
@@ -172,7 +173,7 @@ class GRU_D(nn.Module):
     def forward(self, t, x, m): 
         #input(b, t, f)
         batch_size, seq_len, feature_size = x.size()
-        h = torch.zeros(batch_size, self.hidden_size)
+        h = torch.zeros(batch_size, self.hidden_size).to(device)
         # h = torch.rand(batch_size, self.hidden_size)
 
         outputs = []
@@ -193,17 +194,17 @@ class GRU_D(nn.Module):
             ut = torch.tensor(ut)
              # 1.x_ut (b, f)
             ct = 1 - ut
-            a_ut = torch.sigmoid(self.ct(ct))
-            x_ut = x[:, s, :] * a_ut
+            a_ut = torch.sigmoid(self.ct(ct.to(device)))
+            x_ut = x[:, s, :] * a_ut.to(device)
             
             # x_st
             c_st01 = (ct - 0.5).floor()
-            x_st0true = x[:, s, :] * c_st01
+            x_st0true = x[:, s, :] * c_st01.to(device)
             # TGRU(x_st0true)
             x_stdeep = x_st0true * (self.c1/torch.log(self.ce + t[:, s, :]))
                                  
             a_st01 = (a_ut - 0.5).floor()
-            a_st0true = x[:, s, :] * a_st01
+            a_st0true = x[:, s, :] * a_st01.to(device)
             # TGRU(a_st0true)
             a_stdeep = a_st0true * (self.c1/torch.log(self.ce + t[:, s, :]))
             # 2.x_st (b, f)
@@ -211,7 +212,7 @@ class GRU_D(nn.Module):
             
             # x_adj
             x_adj = torch.cat((x_ut, x_st), 1)
-            x_adj = torch.relu(self.xa(x_adj))
+            x_adj = torch.relu(self.xa(x_adj.to(device)))
 
 
             outs = self.W_all(x_adj) + self.U_all(h)
@@ -303,7 +304,7 @@ def train(epochs, batch_size, learning_rate, hidden_size):
     valid_loader = torch.utils.data.DataLoader(valid_data, batch_size = batch_size, shuffle= False)
     
     model = GRU_D(input_size, hidden_size, 1)
-    # model.to(device)
+    model.to(device)
     criterion = nn.BCELoss()
     optimizer = optim.SGD(list(model.parameters()), lr = learning_rate) #0.01， 0.05, 0.1
     for epoch in range(1, epochs+1):
@@ -394,8 +395,9 @@ if __name__ == '__main__':
     print('start')
     warnings.filterwarnings("ignore")
     
-    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     torch.cuda.set_device("cuda:2")
+
     
     Encode_Decode_Time_BO = BayesianOptimization(
         train, {
@@ -408,29 +410,27 @@ if __name__ == '__main__':
     Encode_Decode_Time_BO.maximize()
     print(Encode_Decode_Time_BO.max)
     
-# # {'target': 0.817106365159129, 'params': {'batch_size': 20.76315099977331, 'epochs': 45.65944544579831, 'hidden_size': 33.6627513686892, 'learning_rate': 0.11585531666409495}}
-
-#     # !!!auc, auprc, acc, prec, recall, fscore
-#     auc_all = []
-#     auprc_all = []
-#     acc_all = []
-#     prec_all = []
-#     recall_all = []
-#     fscore_all = []
+    # # auc, auprc, acc, prec, recall, fscore
+    # auc_all = []
+    # auprc_all = []
+    # acc_all = []
+    # prec_all = []
+    # recall_all = []
+    # fscore_all = []
     
-#     for i in range(20):
-#         # train(epochs, batch_size, learning_rate, hidden_size)
-#         auc, auprc, acc, prec, recall, fscore = train(45.65944544579831, 20.76315099977331, 0.11585531666409495, 33.6627513686892)
+    # for i in range(30):
+    #     # train(epochs, batch_size, learning_rate, hidden_size, num_layer)
+    #     auc, auprc, acc, prec, recall, fscore = train(45.65944544579831, 20.76315099977331, 0.11585531666409495, 33.6627513686892)
 
-#         auc_all.append(auc)
-#         auprc_all.append(auprc)
-#         acc_all.append(acc)
-#         prec_all.append(prec)
-#         recall_all.append(recall)
-#         fscore_all.append(fscore)
+    #     auc_all.append(auc)
+    #     auprc_all.append(auprc)
+    #     acc_all.append(acc)
+    #     prec_all.append(prec)
+    #     recall_all.append(recall)
+    #     fscore_all.append(fscore)
     
-#     print("epoch---{}---AUC_ave: {:.4f}, AUC_std: {:.4f} -- AUPRC_ave: {:.4f}, AUPRC_std: {:.4f} -- Acc_ave: {:.4f}, Acc_std: {:.4f} -- Prec_ave: {:.4f}, Prec_std: {:.4f} -- Recall_ave: {:.4f}, Recall_std: {:.4f} -- Fscore_ave: {:.4f}, Fscore_std: {:.4f}".format(i, 
-#     np.mean(auc_all), np.std(auc_all), np.mean(auprc_all), np.std(auprc_all), np.mean(acc_all), np.std(acc_all), np.mean(prec_all), np.std(prec_all), np.mean(recall_all), np.std(recall_all), np.mean(fscore_all), np.std(fscore_all),))
+    # print("epoch---{}---AUC_ave: {:.4f}, AUC_std: {:.4f} -- AUPRC_ave: {:.4f}, AUPRC_std: {:.4f} -- Acc_ave: {:.4f}, Acc_std: {:.4f} -- Prec_ave: {:.4f}, Prec_std: {:.4f} -- Recall_ave: {:.4f}, Recall_std: {:.4f} -- Fscore_ave: {:.4f}, Fscore_std: {:.4f}".format(i, 
+    # np.mean(auc_all), np.std(auc_all), np.mean(auprc_all), np.std(auprc_all), np.mean(acc_all), np.std(acc_all), np.mean(prec_all), np.std(prec_all), np.mean(recall_all), np.std(recall_all), np.mean(fscore_all), np.std(fscore_all),))
 
 
     
