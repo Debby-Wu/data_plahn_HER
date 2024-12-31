@@ -150,8 +150,8 @@ class GRU_D(nn.Module):
         super(GRU_D, self).__init__()
         self.feature_size = feature_size
         self.hidden_size = hidden_size
-        self.c1 = torch.tensor(1, dtype=torch.float32)
-        self.ce = torch.tensor(2.7813, dtype=torch.float32)
+        self.c1 = torch.tensor(1, dtype=torch.float32).to(device)
+        self.ce = torch.tensor(2.7813, dtype=torch.float32).to(device)
         
         self.ct = nn.Linear(feature_size, feature_size)
         self.xa = nn.Linear(feature_size * 2, feature_size)
@@ -173,7 +173,7 @@ class GRU_D(nn.Module):
     def forward(self, t, x, m): 
         #input(b, t, f)
         batch_size, seq_len, feature_size = x.size()
-        h = torch.zeros(batch_size, self.hidden_size)
+        h = torch.zeros(batch_size, self.hidden_size).to(device)
         # h = torch.rand(batch_size, self.hidden_size)
 
         outputs = []
@@ -194,17 +194,17 @@ class GRU_D(nn.Module):
             ut = torch.tensor(ut)
              # 1.x_ut (b, f)
             ct = 1 - ut
-            a_ut = torch.sigmoid(self.ct(ct))
-            x_ut = x[:, s, :] * a_ut
+            a_ut = torch.sigmoid(self.ct(ct.to(device)))
+            x_ut = x[:, s, :] * a_ut.to(device)
             
             # x_st
             c_st01 = (ct - 0.5).floor()
-            x_st0true = x[:, s, :] * c_st01
+            x_st0true = x[:, s, :] * c_st01.to(device)
             # TGRU(x_st0true)
             x_stdeep = x_st0true * (self.c1/torch.log(self.ce + t[:, s, :]))
                                  
             a_st01 = (a_ut - 0.5).floor()
-            a_st0true = x[:, s, :] * a_st01
+            a_st0true = x[:, s, :] * a_st01.to(device)
             # TGRU(a_st0true)
             a_stdeep = a_st0true * (self.c1/torch.log(self.ce + t[:, s, :]))
             # 2.x_st (b, f)
@@ -212,7 +212,7 @@ class GRU_D(nn.Module):
             
             # x_adj
             x_adj = torch.cat((x_ut, x_st), 1)
-            x_adj = torch.relu(self.xa(x_adj))
+            x_adj = torch.relu(self.xa(x_adj.to(device)))
 
 
             outs = self.W_all(x_adj) + self.U_all(h)
@@ -304,7 +304,7 @@ def train(epochs, batch_size, learning_rate, hidden_size):
     valid_loader = torch.utils.data.DataLoader(valid_data, batch_size = batch_size, shuffle= False)
     
     model = GRU_D(input_size, hidden_size, 1)
-    # model.to(device)
+    model.to(device)
     criterion = nn.BCELoss()
     optimizer = optim.SGD(list(model.parameters()), lr = learning_rate) #0.01， 0.05, 0.1
     for epoch in range(1, epochs+1):
@@ -313,10 +313,10 @@ def train(epochs, batch_size, learning_rate, hidden_size):
         train_loss = 0
     
         for delta, value, missing, label in train_loader:
-            # delta = delta.to(device)
-            # value = value.to(device)
-            # missing = missing.to(device)
-            # label = label.to(device)
+            delta = delta.to(device)
+            value = value.to(device)
+            missing = missing.to(device)
+            label = label.to(device)
             # 1.梯度置零
             optimizer.zero_grad()
             # 2.计算loss
@@ -362,21 +362,21 @@ def test(phase, epoch, test_loader, model, criterion):
     
     with torch.no_grad():
         for delta, value, missing, label in test_loader:
-            # delta = delta.to(device)
-            # value = value.to(device)
-            # missing = missing.to(device)
-            # label = label.to(device)
+            delta = delta.to(device)
+            value = value.to(device)
+            missing = missing.to(device)
+            label = label.to(device)
 
-            gt_labels.append(label)
+            gt_labels.append(label.to('cpu').detach().numpy())
             
             output = model(delta, value, missing).to(torch.float32)
             loss = criterion(output, label)
             val_loss += loss.item() * value.size(0)
             
-            threshold = selThrehold(label, output)
-            pred_label = output.ge(threshold).float()
+            threshold = selThrehold(label.to('cpu').detach().numpy(), output.to('cpu').detach().numpy())
+            pred_label = output.ge(threshold).float().to('cpu').detach().numpy()
             
-            pred_scores.append(output)
+            pred_scores.append(output.to('cpu').detach().numpy())
             pred_labels.append(pred_label)
 
     val_loss = val_loss / len(test_loader.dataset)
@@ -395,8 +395,7 @@ if __name__ == '__main__':
     print('start')
     warnings.filterwarnings("ignore")
     
-    # device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-    torch.cuda.set_device("cuda:2")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     
     Encode_Decode_Time_BO = BayesianOptimization(
