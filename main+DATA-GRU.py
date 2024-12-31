@@ -304,7 +304,7 @@ def train(epochs, batch_size, learning_rate, hidden_size):
     valid_loader = torch.utils.data.DataLoader(valid_data, batch_size = batch_size, shuffle= False)
     
     model = GRU_D(input_size, hidden_size, 1)
-    model.to(device)
+    # model.to(device)
     criterion = nn.BCELoss()
     optimizer = optim.SGD(list(model.parameters()), lr = learning_rate) #0.01， 0.05, 0.1
     for epoch in range(1, epochs+1):
