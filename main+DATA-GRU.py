@@ -294,9 +294,9 @@ def train(epochs, batch_size, learning_rate, hidden_size):
 
     input_size = 96
         
-    inputData = np.load('/home/hudq/agreewithu/Wu/301/Model/DATA-GRU/time interval/6m/train_data.npz', allow_pickle=True)
+    inputData = np.load('./train_data.npz', allow_pickle=True)
     train_data = train_test_dataset(inputData)
-    inputData = np.load('/home/hudq/agreewithu/Wu/301/Model/DATA-GRU/time interval/6m/valid_data.npz', allow_pickle=True)
+    inputData = np.load('./valid_data.npz', allow_pickle=True)
     valid_data = train_test_dataset(inputData)
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, shuffle = True,  drop_last = False)
@@ -332,7 +332,7 @@ def train(epochs, batch_size, learning_rate, hidden_size):
         print('Epoch: {} \tTraining Loss: {:.6f} ---------------------'.format(epoch, train_loss))
         test('valid', epoch, valid_loader, model, criterion)
     
-    inputData = np.load('/home/hudq/agreewithu/Wu/301/Model/DATA-GRU/time interval/6m/test_data.npz', allow_pickle=True)
+    inputData = np.load('./test_data.npz', allow_pickle=True)
     test_data = train_test_dataset(inputData)
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle = False)
     auc = test('test', epoch, test_loader, model, criterion)
