@@ -32,7 +32,7 @@ import warnings
 
 # def gafPatient(feature, min_size):
 #     gaf_feature = []
-#     scaler = MinMaxScaler(feature_range=(-1,1)) 
+#     scaler = MinMaxScaler(feature_range=(0,1)) 
 #     # scaler1 = StandardScaler()
 #     for patient in range(0, len(feature)):
 #         patient_records = np.array(feature[patient]).reshape(-1,1).T #(1,n)
@@ -69,7 +69,7 @@ import warnings
 # -----------------
 
 # -----------------1.patient( deta t + feature + missing data indicator)
-# # def featureMap(gaf_delta_t, gaf_all_feature_impute, gaf_all_missingdata_indicator):
+# def featureMap(gaf_delta_t, gaf_all_feature_impute, gaf_all_missingdata_indicator):
 # def featureMap(gaf_delta_t, gaf_all_feature_impute, gaf_all_missingdata_indicator):
 #     x = []
 
@@ -139,7 +139,7 @@ def train_test_dataset(inputData):
     # dataSet = MyDataset(x[:,:,:1], x[:,:,1:51], x[:,:,51:101], y)
     # dataSet = MyDataset(x[:,:,:1], x[:,:,1:53], x[:,:,53:105], y)
     dataSet = MyDataset(x[:,:,:1], x[:,:,1:97], x[:,:,97:193], y)
-
+    
     return dataSet
 
 # ----------------->>>>>>>>>>
@@ -150,8 +150,8 @@ class GRU_D(nn.Module):
         super(GRU_D, self).__init__()
         self.feature_size = feature_size
         self.hidden_size = hidden_size
-        self.c1 = torch.tensor(1, dtype=torch.float32)
-        self.ce = torch.tensor(2.7813, dtype=torch.float32)
+        self.c1 = torch.tensor(1, dtype=torch.float32).to(device)
+        self.ce = torch.tensor(2.7813, dtype=torch.float32).to(device)
         
         self.ct = nn.Linear(feature_size, feature_size)
         self.xa = nn.Linear(feature_size * 2, feature_size)
@@ -173,7 +173,7 @@ class GRU_D(nn.Module):
     def forward(self, t, x, m): 
         #input(b, t, f)
         batch_size, seq_len, feature_size = x.size()
-        h = torch.zeros(batch_size, self.hidden_size)
+        h = torch.zeros(batch_size, self.hidden_size).to(device)
         # h = torch.rand(batch_size, self.hidden_size)
 
         outputs = []
@@ -194,33 +194,33 @@ class GRU_D(nn.Module):
             ut = torch.tensor(ut)
              # 1.x_ut (b, f)
             ct = 1 - ut
-            a_ut = torch.sigmoid(self.ct(ct))
-            x_ut = x[:, s, :] * a_ut
+            a_ut = torch.sigmoid(self.ct(ct.to(device)))
+            x_ut = x[:, s, :] * a_ut.to(device)
             
-            # 2.x_st (b, f)
+            # x_st
             c_st01 = (ct - 0.5).floor()
-            x_st0true = x[:, s, :] * c_st01
+            x_st0true = x[:, s, :] * c_st01.to(device)
             # TGRU(x_st0true)
             x_stdeep = x_st0true * (self.c1/torch.log(self.ce + t[:, s, :]))
                                  
             a_st01 = (a_ut - 0.5).floor()
-            a_st0true = x[:, s, :] * a_st01
+            a_st0true = x[:, s, :] * a_st01.to(device)
             # TGRU(a_st0true)
             a_stdeep = a_st0true * (self.c1/torch.log(self.ce + t[:, s, :]))
-            # x_st 
+            # 2.x_st (b, f)
             x_st = x_stdeep * a_stdeep
             
-            #3. x_adj
+            # x_adj
             x_adj = torch.cat((x_ut, x_st), 1)
-            x_adj = torch.relu(self.xa(x_adj))
+            x_adj = torch.relu(self.xa(x_adj.to(device)))
 
-            # GRU
+
             outs = self.W_all(x_adj) + self.U_all(h)
             z, r = torch.chunk(outs, 2, 1)
             z = torch.sigmoid(z)
             r = torch.sigmoid(r)
-            h_tilde = torch.tanh(self.Wh(torch.cat((x_adj, r*h), 1)))
             
+            h_tilde = torch.tanh(self.Wh(torch.cat((x_adj, r*h), 1)))
             h = (1 - z) * h +z * h_tilde
             
             outputs.append(h)
@@ -300,11 +300,11 @@ def train(epochs, batch_size, learning_rate, hidden_size):
     inputData = np.load('./valid_data.npz', allow_pickle=True)
     valid_data = train_test_dataset(inputData)
 
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, shuffle = True,  drop_last = False, num_workers = 0, pin_memory = True)
-    valid_loader = torch.utils.data.DataLoader(valid_data, batch_size = batch_size, shuffle= False, num_workers = 0, pin_memory = True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, shuffle = True,  drop_last = False)
+    valid_loader = torch.utils.data.DataLoader(valid_data, batch_size = batch_size, shuffle= False)
     
     model = GRU_D(input_size, hidden_size, 1)
-    # model.to(device)
+    model.to(device)
     criterion = nn.BCELoss()
     optimizer = optim.SGD(list(model.parameters()), lr = learning_rate) #0.01， 0.05, 0.1
     for epoch in range(1, epochs+1):
@@ -313,10 +313,10 @@ def train(epochs, batch_size, learning_rate, hidden_size):
         train_loss = 0
     
         for delta, value, missing, label in train_loader:
-            # delta = delta.to(device)
-            # value = value.to(device)
-            # missing = missing.to(device)
-            # label = label.to(device)
+            delta = delta.to(device)
+            value = value.to(device)
+            missing = missing.to(device)
+            label = label.to(device)
             # 1.梯度置零
             optimizer.zero_grad()
             # 2.计算loss
@@ -335,7 +335,7 @@ def train(epochs, batch_size, learning_rate, hidden_size):
     
     inputData = np.load('./test_data.npz', allow_pickle=True)
     test_data = train_test_dataset(inputData)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle = False, num_workers = 0, pin_memory = True)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle = False)
     auc = test('test', epoch, test_loader, model, criterion)
     # auc, auprc, acc, prec, recall, fscore = test('test', epoch, test_loader, model, criterion)
 
@@ -362,21 +362,21 @@ def test(phase, epoch, test_loader, model, criterion):
     
     with torch.no_grad():
         for delta, value, missing, label in test_loader:
-            # delta = delta.to(device)
-            # value = value.to(device)
-            # missing = missing.to(device)
-            # label = label.to(device)
+            delta = delta.to(device)
+            value = value.to(device)
+            missing = missing.to(device)
+            label = label.to(device)
 
-            gt_labels.append(label)
+            gt_labels.append(label.to('cpu').detach().numpy())
             
             output = model(delta, value, missing).to(torch.float32)
             loss = criterion(output, label)
             val_loss += loss.item() * value.size(0)
             
-            threshold = selThrehold(label, output)
-            pred_label = output.ge(threshold).float()
+            threshold = selThrehold(label.to('cpu').detach().numpy(), output.to('cpu').detach().numpy())
+            pred_label = output.ge(threshold).float().to('cpu').detach().numpy()
             
-            pred_scores.append(output)
+            pred_scores.append(output.to('cpu').detach().numpy())
             pred_labels.append(pred_label)
 
     val_loss = val_loss / len(test_loader.dataset)
@@ -392,38 +392,12 @@ def test(phase, epoch, test_loader, model, criterion):
             
 
 if __name__ == '__main__':
-    # # # -----------------第一部分，输入数据
-    # inputData = np.load('inputData_3_96.npz', allow_pickle=True)
-    # select_delta_t = inputData['arr_0'].tolist()
-    # select_all_feature_impute = inputData['arr_1'].tolist()
-    # select_all_missingdata_indicator = inputData['arr_2'].tolist()
-    # y = inputData['arr_3'].tolist()
-    
-    # # # 最小长度
-    # min_size = 3
-    
-    # # -----------------第二部分，GAF 
-    # gaf_delta_t = gafPatient(select_delta_t, min_size)
-    # gaf_all_feature_impute = gafFeature(select_all_feature_impute, min_size)
-    # gaf_all_missingdata_indicator = gafFeature(select_all_missingdata_indicator, min_size)
-    # # -----------------第三部分，构建特征图 >>>>所有输入数据
-    # # -----------------1.patient( deta t + feature + missing data indicator)
-    # x = featureMap(gaf_delta_t, gaf_all_feature_impute, gaf_all_missingdata_indicator)
-    # np.savez('inputData_xy.npz',  x, y)
-    
-    # train_test_dataSave()
-    
-    
-    # !!! 训练
     print('start')
     warnings.filterwarnings("ignore")
     
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # torch.cuda.set_device("cuda:0")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+
     
-    
-    
-    # 贝叶斯优化
     Encode_Decode_Time_BO = BayesianOptimization(
         train, {
             'epochs': (30, 60),
@@ -435,8 +409,7 @@ if __name__ == '__main__':
     Encode_Decode_Time_BO.maximize()
     print(Encode_Decode_Time_BO.max)
     
-    # # {'target': 0.8307858738135121, 'params': {'batch_size': 40.25914959026557, 'epochs': 54.6037747863172, 'hidden_size': 40.72217034561399, 'learning_rate': 0.16964773066860836}}
-    # # !!!auc, auprc, acc, prec, recall, fscore
+    # # auc, auprc, acc, prec, recall, fscore
     # auc_all = []
     # auprc_all = []
     # acc_all = []
