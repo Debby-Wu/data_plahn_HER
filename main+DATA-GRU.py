@@ -292,7 +292,7 @@ def train(epochs, batch_size, learning_rate, hidden_size):
     batch_size = int(batch_size)
     hidden_size = int(hidden_size)
 
-    input_size = 52
+    input_size = 96
         
     inputData = np.load('/home/hudq/agreewithu/Wu/301/Model/DATA-GRU/time interval/6m/train_data.npz', allow_pickle=True)
     train_data = train_test_dataset(inputData)
@@ -395,7 +395,7 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    torch.cuda.set_device("cuda:0")
+    torch.cuda.set_device("cuda:2")
     
     Encode_Decode_Time_BO = BayesianOptimization(
         train, {
