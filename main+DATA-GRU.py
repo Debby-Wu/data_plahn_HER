@@ -150,8 +150,8 @@ class GRU_D(nn.Module):
         super(GRU_D, self).__init__()
         self.feature_size = feature_size
         self.hidden_size = hidden_size
-        self.c1 = torch.tensor(1, dtype=torch.float32).to(device)
-        self.ce = torch.tensor(2.7813, dtype=torch.float32).to(device)
+        self.c1 = torch.tensor(1, dtype=torch.float32)
+        self.ce = torch.tensor(2.7813, dtype=torch.float32)
         
         self.ct = nn.Linear(feature_size, feature_size)
         self.xa = nn.Linear(feature_size * 2, feature_size)
@@ -173,7 +173,7 @@ class GRU_D(nn.Module):
     def forward(self, t, x, m): 
         #input(b, t, f)
         batch_size, seq_len, feature_size = x.size()
-        h = torch.zeros(batch_size, self.hidden_size).to(device)
+        h = torch.zeros(batch_size, self.hidden_size)
         # h = torch.rand(batch_size, self.hidden_size)
 
         outputs = []
@@ -194,17 +194,17 @@ class GRU_D(nn.Module):
             ut = torch.tensor(ut)
              # 1.x_ut (b, f)
             ct = 1 - ut
-            a_ut = torch.sigmoid(self.ct(ct.to(device)))
-            x_ut = x[:, s, :] * a_ut.to(device)
+            a_ut = torch.sigmoid(self.ct(ct))
+            x_ut = x[:, s, :] * a_ut
             
             # x_st
             c_st01 = (ct - 0.5).floor()
-            x_st0true = x[:, s, :] * c_st01.to(device)
+            x_st0true = x[:, s, :] * c_st01
             # TGRU(x_st0true)
             x_stdeep = x_st0true * (self.c1/torch.log(self.ce + t[:, s, :]))
                                  
             a_st01 = (a_ut - 0.5).floor()
-            a_st0true = x[:, s, :] * a_st01.to(device)
+            a_st0true = x[:, s, :] * a_st01
             # TGRU(a_st0true)
             a_stdeep = a_st0true * (self.c1/torch.log(self.ce + t[:, s, :]))
             # 2.x_st (b, f)
@@ -212,7 +212,7 @@ class GRU_D(nn.Module):
             
             # x_adj
             x_adj = torch.cat((x_ut, x_st), 1)
-            x_adj = torch.relu(self.xa(x_adj.to(device)))
+            x_adj = torch.relu(self.xa(x_adj))
 
 
             outs = self.W_all(x_adj) + self.U_all(h)
