@@ -336,11 +336,11 @@ def train(epochs, batch_size, learning_rate, hidden_size):
     inputData = np.load('./test_data.npz', allow_pickle=True)
     test_data = train_test_dataset(inputData)
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle = False, num_workers = 0, pin_memory = True)
-    # auc = test('test', epoch, test_loader, model, criterion)
-    auc, auprc, acc, prec, recall, fscore = test('test', epoch, test_loader, model, criterion)
+    auc = test('test', epoch, test_loader, model, criterion)
+    # auc, auprc, acc, prec, recall, fscore = test('test', epoch, test_loader, model, criterion)
 
-    # return auc
-    return auc, auprc, acc, prec, recall, fscore
+    return auc
+    # return auc, auprc, acc, prec, recall, fscore
 
 
 
@@ -387,8 +387,8 @@ def test(phase, epoch, test_loader, model, criterion):
     else:
         print('Epoch: {} \tTest Loss: {:.4f}, AUC: {:.4f}, AUPRC: {:.4f}, Acc: {:.4f}, Prec: {:.4f}, Recall: {:.4f}, F-Score: {:.4f}'.format(epoch, val_loss, auc, auprc, acc, prec, recall, fscore))
     
-    # return auc
-    return auc, auprc, acc, prec, recall, fscore
+    return auc
+    # return auc, auprc, acc, prec, recall, fscore
             
 
 if __name__ == '__main__':
