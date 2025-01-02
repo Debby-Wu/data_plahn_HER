@@ -410,8 +410,8 @@ if __name__ == '__main__':
     # print(Encode_Decode_Time_BO.max)
     
 
-    # {'target': 0.8625850953518778, 'params': {'batch_size': 10.217820642186318, 'epochs': 48.265275740215486, 'hidden_size': 46.53355158574155, 'learning_rate': 0.10960978240853722}}
-    # auc, auprc, acc, prec, recall, fscore
+# {'target': 0.908500837520938, 'params': {'batch_size': 32.43121037950945, 'epochs': 47.193682886797504, 'hidden_size': 32.01550434960171, 'learning_rate': 0.32888284184198857}}    
+# auc, auprc, acc, prec, recall, fscore
     auc_all = []
     auprc_all = []
     acc_all = []
@@ -421,7 +421,7 @@ if __name__ == '__main__':
     
     for i in range(30):
         # train(epochs, batch_size, learning_rate, hidden_size)
-        auc, auprc, acc, prec, recall, fscore = train(48.265275740215486, 10.217820642186318, 0.10960978240853722, 46.53355158574155)
+        auc, auprc, acc, prec, recall, fscore = train(47.193682886797504, 32.43121037950945, 0.32888284184198857, 32.01550434960171)
 
         auc_all.append(auc)
         auprc_all.append(auprc)
