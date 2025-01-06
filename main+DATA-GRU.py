@@ -398,16 +398,16 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     
-    # Encode_Decode_Time_BO = BayesianOptimization(
-    #     train, {
-    #         'epochs': (30, 60),
-    #         'batch_size':(10, 60),
-    #         'learning_rate':(0.01, 0.5),
-    #         'hidden_size':(32, 64)
-    #         }
-    #     )
-    # Encode_Decode_Time_BO.maximize()
-    # print(Encode_Decode_Time_BO.max)
+    Encode_Decode_Time_BO = BayesianOptimization(
+        train, {
+            'epochs': (30, 60),
+            'batch_size':(10, 60),
+            'learning_rate':(0.01, 0.5),
+            'hidden_size':(32, 64)
+            }
+        )
+    Encode_Decode_Time_BO.maximize()
+    print(Encode_Decode_Time_BO.max)
     
 
 # # auc, auprc, acc, prec, recall, fscore
