@@ -336,11 +336,11 @@ def train(epochs, batch_size, learning_rate, hidden_size):
     inputData = np.load('./test_data.npz', allow_pickle=True)
     test_data = train_test_dataset(inputData)
     test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle = False)
-    # auc = test('test', epoch, test_loader, model, criterion)
-    auc, auprc, acc, prec, recall, fscore = test('test', epoch, test_loader, model, criterion)
+    auc = test('test', epoch, test_loader, model, criterion)
+    # auc, auprc, acc, prec, recall, fscore = test('test', epoch, test_loader, model, criterion)
 
-    # return auc
-    return auc, auprc, acc, prec, recall, fscore
+    return auc
+    # return auc, auprc, acc, prec, recall, fscore
 
 
 
@@ -387,15 +387,15 @@ def test(phase, epoch, test_loader, model, criterion):
     else:
         print('Epoch: {} \tTest Loss: {:.4f}, AUC: {:.4f}, AUPRC: {:.4f}, Acc: {:.4f}, Prec: {:.4f}, Recall: {:.4f}, F-Score: {:.4f}'.format(epoch, val_loss, auc, auprc, acc, prec, recall, fscore))
     
-    # return auc
-    return auc, auprc, acc, prec, recall, fscore
+    return auc
+    # return auc, auprc, acc, prec, recall, fscore
             
 
 if __name__ == '__main__':
     print('start')
     warnings.filterwarnings("ignore")
     
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     
     # Encode_Decode_Time_BO = BayesianOptimization(
@@ -410,28 +410,27 @@ if __name__ == '__main__':
     # print(Encode_Decode_Time_BO.max)
     
 
-# {'target': 0.9478114478114479, 'params': {'batch_size': 22.928714502167693, 'epochs': 41.929098561431545, 'hidden_size': 53.06661560595953, 'learning_rate': 0.05507675540228063}} 
-# auc, auprc, acc, prec, recall, fscore
-    auc_all = []
-    auprc_all = []
-    acc_all = []
-    prec_all = []
-    recall_all = []
-    fscore_all = []
+# # auc, auprc, acc, prec, recall, fscore
+#     auc_all = []
+#     auprc_all = []
+#     acc_all = []
+#     prec_all = []
+#     recall_all = []
+#     fscore_all = []
     
-    for i in range(30):
-        # train(epochs, batch_size, learning_rate, hidden_size)
-        auc, auprc, acc, prec, recall, fscore = train(41.929098561431545, 22.928714502167693, 0.05507675540228063, 53.06661560595953)
+#     for i in range(30):
+#         # train(epochs, batch_size, learning_rate, hidden_size)
+#         auc, auprc, acc, prec, recall, fscore = train(41.929098561431545, 22.928714502167693, 0.05507675540228063, 53.06661560595953)
 
-        auc_all.append(auc)
-        auprc_all.append(auprc)
-        acc_all.append(acc)
-        prec_all.append(prec)
-        recall_all.append(recall)
-        fscore_all.append(fscore)
+#         auc_all.append(auc)
+#         auprc_all.append(auprc)
+#         acc_all.append(acc)
+#         prec_all.append(prec)
+#         recall_all.append(recall)
+#         fscore_all.append(fscore)
     
-    print("epoch---{}---AUC_ave: {:.4f}, AUC_std: {:.4f} -- AUPRC_ave: {:.4f}, AUPRC_std: {:.4f} -- Acc_ave: {:.4f}, Acc_std: {:.4f} -- Prec_ave: {:.4f}, Prec_std: {:.4f} -- Recall_ave: {:.4f}, Recall_std: {:.4f} -- Fscore_ave: {:.4f}, Fscore_std: {:.4f}".format(i, 
-    np.mean(auc_all), np.std(auc_all), np.mean(auprc_all), np.std(auprc_all), np.mean(acc_all), np.std(acc_all), np.mean(prec_all), np.std(prec_all), np.mean(recall_all), np.std(recall_all), np.mean(fscore_all), np.std(fscore_all),))
+#     print("epoch---{}---AUC_ave: {:.4f}, AUC_std: {:.4f} -- AUPRC_ave: {:.4f}, AUPRC_std: {:.4f} -- Acc_ave: {:.4f}, Acc_std: {:.4f} -- Prec_ave: {:.4f}, Prec_std: {:.4f} -- Recall_ave: {:.4f}, Recall_std: {:.4f} -- Fscore_ave: {:.4f}, Fscore_std: {:.4f}".format(i, 
+#     np.mean(auc_all), np.std(auc_all), np.mean(auprc_all), np.std(auprc_all), np.mean(acc_all), np.std(acc_all), np.mean(prec_all), np.std(prec_all), np.mean(recall_all), np.std(recall_all), np.mean(fscore_all), np.std(fscore_all),))
 
 
     
