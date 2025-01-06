@@ -395,7 +395,7 @@ if __name__ == '__main__':
     print('start')
     warnings.filterwarnings("ignore")
     
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
     
     Encode_Decode_Time_BO = BayesianOptimization(
